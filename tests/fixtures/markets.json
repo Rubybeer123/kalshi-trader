@@ -1,0 +1,34 @@
+{
+  "market": {
+    "ticker": "KXBTC15M-26FEB150330-30",
+    "title": "BTC $30K 15-min",
+    "category": "crypto",
+    "status": "open",
+    "yes_bid": 60,
+    "yes_ask": 65,
+    "no_bid": 35,
+    "no_ask": 40,
+    "volume": 10000,
+    "open_interest": 5000
+  },
+  "markets_list": {
+    "markets": [
+      {
+        "ticker": "KXBTC15M-26FEB150330-30",
+        "title": "BTC $30K",
+        "status": "open"
+      },
+      {
+        "ticker": "KETH15M-26FEB150330-3500",
+        "title": "ETH $3500",
+        "status": "open"
+      },
+      {
+        "ticker": "KSOL15M-26FEB150330-150",
+        "title": "SOL $150",
+        "status": "open"
+      }
+    ],
+    "cursor": null
+  }
+}

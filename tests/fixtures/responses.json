@@ -1,0 +1,43 @@
+{
+  "order_filled": {
+    "order_id": "order-123",
+    "client_order_id": "client-123",
+    "ticker": "KXBTC15M-26FEB150330-30",
+    "side": "yes",
+    "price": 65,
+    "count": 10,
+    "status": "filled",
+    "filled_count": 10,
+    "remaining_count": 0
+  },
+  "order_partial": {
+    "order_id": "order-456",
+    "client_order_id": "client-456",
+    "ticker": "KXBTC15M-26FEB150330-30",
+    "side": "yes",
+    "price": 65,
+    "count": 10,
+    "status": "open",
+    "filled_count": 5,
+    "remaining_count": 5
+  },
+  "balance": {
+    "available_balance": 5000.0,
+    "total_balance": 10000.0,
+    "portfolio_value": 5000.0
+  },
+  "positions": [
+    {
+      "market_ticker": "KXBTC15M-26FEB150330-30",
+      "side": "yes",
+      "count": 10,
+      "avg_entry_price": 0.60
+    },
+    {
+      "market_ticker": "KETH15M-26FEB150330-3500",
+      "side": "no",
+      "count": 5,
+      "avg_entry_price": 0.40
+    }
+  ]
+}

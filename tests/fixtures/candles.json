@@ -1,0 +1,20 @@
+{
+  "candles": [
+    {"timestamp": 1708953600, "open": 0.50, "high": 0.52, "low": 0.48, "close": 0.51, "volume": 1000},
+    {"timestamp": 1708954500, "open": 0.51, "high": 0.53, "low": 0.49, "close": 0.52, "volume": 1100},
+    {"timestamp": 1708955400, "open": 0.52, "high": 0.54, "low": 0.50, "close": 0.53, "volume": 1200},
+    {"timestamp": 1708956300, "open": 0.53, "high": 0.55, "low": 0.51, "close": 0.54, "volume": 1300},
+    {"timestamp": 1708957200, "open": 0.54, "high": 0.56, "low": 0.52, "close": 0.55, "volume": 1400},
+    {"timestamp": 1708958100, "open": 0.55, "high": 0.57, "low": 0.53, "close": 0.56, "volume": 1500},
+    {"timestamp": 1708959000, "open": 0.56, "high": 0.58, "low": 0.54, "close": 0.57, "volume": 1600},
+    {"timestamp": 1708959900, "open": 0.57, "high": 0.59, "low": 0.55, "close": 0.58, "volume": 1700},
+    {"timestamp": 1708960800, "open": 0.58, "high": 0.60, "low": 0.56, "close": 0.59, "volume": 1800},
+    {"timestamp": 1708961700, "open": 0.59, "high": 0.61, "low": 0.57, "close": 0.60, "volume": 1900}
+  ],
+  "extreme_candles": [
+    {"timestamp": 1708953600, "open": 0.50, "high": 0.52, "low": 0.48, "close": 0.51, "volume": 1000},
+    {"timestamp": 1708954500, "open": 0.30, "high": 0.35, "low": 0.25, "close": 0.30, "volume": 5000},
+    {"timestamp": 1708955400, "open": 0.70, "high": 0.75, "low": 0.65, "close": 0.70, "volume": 5000},
+    {"timestamp": 1708956300, "open": 0.50, "high": 0.52, "low": 0.48, "close": 0.51, "volume": 1000}
+  ]
+}

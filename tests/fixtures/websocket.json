@@ -1,0 +1,61 @@
+{
+  "websocket": {
+    "trade": {
+      "channel": "trade",
+      "seq": 1,
+      "type": "trade",
+      "data": {
+        "ticker": "KXBTC15M-26FEB150330-30",
+        "price": 0.65,
+        "count": 100,
+        "created_time": "2024-02-26T15:30:00Z"
+      }
+    },
+    "ticker_update": {
+      "channel": "ticker",
+      "seq": 2,
+      "type": "ticker",
+      "data": {
+        "ticker": "KXBTC15M-26FEB150330-30",
+        "yes_bid": 60,
+        "yes_ask": 65,
+        "no_bid": 35,
+        "no_ask": 40,
+        "last_price": 65
+      }
+    },
+    "orderbook_delta": {
+      "channel": "orderbook_delta",
+      "seq": 3,
+      "type": "orderbook_delta",
+      "data": {
+        "ticker": "KXBTC15M-26FEB150330-30",
+        "yes_bids": [{"price": 61, "count": 100}],
+        "yes_asks": [{"price": 66, "count": 150}]
+      }
+    },
+    "fill": {
+      "channel": "fill",
+      "seq": 4,
+      "type": "fill",
+      "data": {
+        "ticker": "KXBTC15M-26FEB150330-30",
+        "order_id": "order-123",
+        "side": "yes",
+        "price": 65,
+        "count": 10,
+        "fill_count": 10
+      }
+    },
+    "heartbeat": {
+      "type": "heartbeat"
+    },
+    "pong": {
+      "type": "pong"
+    },
+    "error": {
+      "type": "error",
+      "message": "Invalid subscription"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "orderbook": {
+    "ticker": "KXBTC15M-26FEB150330-30",
+    "yes_bids": [
+      {"price": 60, "count": 100},
+      {"price": 59, "count": 200},
+      {"price": 58, "count": 150}
+    ],
+    "yes_asks": [
+      {"price": 65, "count": 150},
+      {"price": 66, "count": 100},
+      {"price": 67, "count": 200}
+    ],
+    "no_bids": [
+      {"price": 35, "count": 100},
+      {"price": 34, "count": 200},
+      {"price": 33, "count": 150}
+    ],
+    "no_asks": [
+      {"price": 40, "count": 150},
+      {"price": 41, "count": 100},
+      {"price": 42, "count": 200}
+    ]
+  }
+}

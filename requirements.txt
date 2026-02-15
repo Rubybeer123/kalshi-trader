@@ -1,0 +1,42 @@
+# Core dependencies
+kalshi-python-async>=2.0.0
+websockets>=11.0
+aiohttp>=3.8.0
+
+# Data handling
+pydantic>=2.0.0
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Technical analysis
+TA-Lib>=0.4.28
+
+# Configuration
+python-dotenv>=1.0.0
+pyyaml>=6.0
+
+# Logging
+structlog>=23.0.0
+
+# Database
+aiosqlite>=0.19.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.0
+freezegun>=1.2.0
+hypothesis>=6.82.0
+
+# Development
+black>=23.7.0
+ruff>=0.0.285
+mypy>=1.5.0
+pre-commit>=3.3.0
+
+# Jupyter notebooks
+jupyter>=1.0.0
+ipykernel>=6.25.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
