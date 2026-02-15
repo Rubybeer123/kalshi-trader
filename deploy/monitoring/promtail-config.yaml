@@ -1,0 +1,57 @@
+# Promtail configuration for shipping logs to Loki
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Docker container logs
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/*/*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            output: log
+            stream: stream
+            timestamp: time
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+      - output:
+          source: output
+      - labels:
+          stream:
+
+  # Trader application logs
+  - job_name: kalshi-trader
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: kalshi-trader
+          app: trader
+          __path__: /var/log/trader/*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            level: level
+            message: msg
+            timestamp: timestamp
+            event: event
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+      - labels:
+          level:
+      - output:
+          source: message

@@ -1,0 +1,66 @@
+# Production overrides for docker-compose.yml
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: "3.8"
+
+services:
+  trader:
+    # Use pre-built image in production
+    image: kalshi-trader:latest
+    build: null
+    
+    restart: always
+    
+    environment:
+      - KALSHI_ENV=production
+      - LOG_LEVEL=WARNING
+      - LOG_FORMAT=json
+      - PAPER_TRADING=false
+    
+    # Stricter resource limits for production
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    
+    # No port exposure in production (use reverse proxy)
+    ports: []
+    
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    
+    read_only: true
+    
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+        labels: "service,environment"
+        env: "KALSHI_ENV,LOG_LEVEL"
+
+  # Disable monitoring services in minimal production setup
+  prometheus:
+    profiles:
+      - never
+
+  grafana:
+    profiles:
+      - never
+
+  loki:
+    profiles:
+      - never
+
+  promtail:
+    profiles:
+      - never

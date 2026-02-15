@@ -1,6 +1,7 @@
 """Enhanced main trading bot with robust async event loop."""
 
 import asyncio
+import os
 import signal
 import sys
 import time
@@ -20,6 +21,7 @@ from src.risk_manager import RiskConfig, RiskManager, CircuitBreaker
 from src.strategies.base import Signal, Strategy
 from src.strategies.bollinger_scalper import BollingerScalper
 from src.market_discovery import MarketDiscovery, CryptoMarket
+from src.metrics_server import create_metrics_server, get_metrics_server
 
 logger = structlog.get_logger(__name__)
 
@@ -86,6 +88,7 @@ class TradingBot:
         self.execution_engine: Optional[ExecutionEngine] = None
         self.performance_tracker: Optional[PerformanceTracker] = None
         self.circuit_breaker: Optional[CircuitBreaker] = None
+        self.metrics_server: Optional[Any] = None
         
         # State
         self._running = False
@@ -166,6 +169,11 @@ class TradingBot:
         # Initialize performance tracker
         self.performance_tracker = PerformanceTracker()
         
+        # Initialize metrics server
+        metrics_port = int(os.environ.get('METRICS_PORT', '8080'))
+        self.metrics_server = create_metrics_server(port=metrics_port, trading_bot=self)
+        await self.metrics_server.start()
+        
         # Discover and setup markets
         await self._setup_markets()
         
@@ -198,6 +206,9 @@ class TradingBot:
         await self._close_all_positions()
         
         # Stop components
+        if self.metrics_server:
+            await self.metrics_server.stop()
+        
         if self.execution_engine:
             await self.execution_engine.stop()
         
@@ -281,10 +292,20 @@ class TradingBot:
             
             if signal:
                 self._signals_generated += 1
+                
+                # Record metric
+                if self.metrics_server:
+                    self.metrics_server.record_signal(ticker)
+                
                 await self._process_signal(signal)
         
         except Exception as e:
             logger.error(f"Error processing candle for {ticker}", error=str(e))
+            
+            # Record error metric
+            if self.metrics_server:
+                self.metrics_server.record_error(type(e).__name__, ticker)
+            
             await self._handle_market_error(ticker, e)
     
     async def _process_signal(self, signal: Signal) -> None:
@@ -345,10 +366,20 @@ class TradingBot:
                 self._signals_executed += 1
                 logger.info(f"Signal executed: {ticker}")
                 
+                # Record trade metric
+                if self.metrics_server:
+                    side = "long" if signal.type.value == "long" else "short"
+                    self.metrics_server.record_trade(ticker, side, "success")
+                
                 # Track in performance tracker
                 # (Will update when position closes)
             else:
                 logger.error(f"Signal execution failed: {result.error_message}")
+                
+                # Record failed trade
+                if self.metrics_server:
+                    side = "long" if signal.type.value == "long" else "short"
+                    self.metrics_server.record_trade(ticker, side, "failed")
         
         except Exception as e:
             logger.error(f"Error processing signal for {ticker}", error=str(e))

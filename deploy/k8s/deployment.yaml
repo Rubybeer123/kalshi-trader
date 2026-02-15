@@ -1,0 +1,309 @@
+# Kalshi Trader - Kubernetes Deployment
+# Production-ready manifests for K8s deployment
+
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kalshi-trader
+  labels:
+    app: kalshi-trader
+    environment: production
+
+---
+# ConfigMap - Non-sensitive configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kalshi-trader-config
+  namespace: kalshi-trader
+data:
+  KALSHI_ENV: "production"
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  INITIAL_CAPITAL: "10000"
+  MAX_POSITIONS: "2"
+  MAX_EXPOSURE: "50"
+  DAILY_LOSS_LIMIT: "5"
+  PAPER_TRADING: "false"
+  METRICS_PORT: "8080"
+  METRICS_ENABLED: "true"
+
+---
+# Secret - API Key ID (sensitive but not the private key)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kalshi-trader-secrets
+  namespace: kalshi-trader
+type: Opaque
+stringData:
+  KALSHI_API_KEY_ID: ""  # Populate with: kubectl create secret generic kalshi-trader-secrets --from-literal=KALSHI_API_KEY_ID=your_key_id -n kalshi-trader
+
+---
+# Secret - Private Key (mounted as file, not env var)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kalshi-private-key
+  namespace: kalshi-trader
+type: Opaque
+stringData:
+  kalshi-key.pem: ""  # Populate with: kubectl create secret generic kalshi-private-key --from-file=kalshi-key.pem=/path/to/key.pem -n kalshi-trader
+
+---
+# Persistent Volume Claim for Data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kalshi-trader-data
+  namespace: kalshi-trader
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kalshi-trader
+  namespace: kalshi-trader
+  labels:
+    app: kalshi-trader
+spec:
+  replicas: 1  # Trading bot should be singleton
+  strategy:
+    type: Recreate  # Don't run multiple instances simultaneously
+  selector:
+    matchLabels:
+      app: kalshi-trader
+  template:
+    metadata:
+      labels:
+        app: kalshi-trader
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: kalshi-trader
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+      
+      # Pod topology spread for availability (if multi-node)
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: kalshi-trader
+      
+      containers:
+        - name: trader
+          image: kalshi-trader:latest
+          imagePullPolicy: Always
+          
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "1000m"
+          
+          envFrom:
+            - configMapRef:
+                name: kalshi-trader-config
+          
+          env:
+            - name: KALSHI_API_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: kalshi-trader-secrets
+                  key: KALSHI_API_KEY_ID
+            - name: KALSHI_PRIVATE_KEY_PATH
+              value: "/secrets/kalshi-key.pem"
+          
+          ports:
+            - name: metrics
+              containerPort: 8080
+              protocol: TCP
+          
+          volumeMounts:
+            # Private key mounted as file (security best practice)
+            - name: private-key
+              mountPath: /secrets
+              readOnly: true
+            
+            # Persistent data storage
+            - name: data
+              mountPath: /app/data
+            
+            # Ephemeral tmp for logs
+            - name: tmp
+              mountPath: /tmp
+          
+          # Liveness probe - checks if app is running
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: metrics
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          
+          # Readiness probe - checks if app is ready to serve
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: metrics
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          
+          # Startup probe - gives time for initial setup
+          startupProbe:
+            httpGet:
+              path: /health
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+      
+      volumes:
+        - name: private-key
+          secret:
+            secretName: kalshi-private-key
+            defaultMode: 0400  # Read-only
+        
+        - name: data
+          persistentVolumeClaim:
+            claimName: kalshi-trader-data
+        
+        - name: tmp
+          emptyDir: {}
+      
+      # Pod disruption budget considerations
+      terminationGracePeriodSeconds: 60
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: kalshi-trader
+  namespace: kalshi-trader
+  labels:
+    app: kalshi-trader
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    app: kalshi-trader
+
+---
+# Horizontal Pod Autoscaler (optional - for future scaling considerations)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: kalshi-trader-hpa
+  namespace: kalshi-trader
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: kalshi-trader
+  minReplicas: 1
+  maxReplicas: 1  # Keep at 1 for trading bot (singleton)
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+# Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kalshi-trader
+  namespace: kalshi-trader
+automountServiceAccountToken: false  # Security: don't mount token unless needed
+
+---
+# Network Policy - Restrict ingress/egress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kalshi-trader-netpol
+  namespace: kalshi-trader
+spec:
+  podSelector:
+    matchLabels:
+      app: kalshi-trader
+  policyTypes:
+    - Ingress
+    - Egress
+  
+  # Ingress rules - only allow from monitoring namespace
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8080
+  
+  # Egress rules - only allow to Kalshi API and DNS
+  egress:
+    # DNS
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+    
+    # Kalshi API (production)
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# Pod Disruption Budget - ensure availability during disruptions
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kalshi-trader-pdb
+  namespace: kalshi-trader
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: kalshi-trader
